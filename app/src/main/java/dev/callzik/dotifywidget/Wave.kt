@@ -35,15 +35,49 @@ object Wave {
     private var cacheKey: String? = null
     private var cache: List<Bitmap> = emptyList()
 
+    // Плавная смена палитры при переключении трека: from → to за несколько шагов
+    private var coverKey: Int? = null
+    private var from: Colors? = null
+    private var to: Colors? = null
+    private var t = 1f
+
+    val transitioning get() = t < 1f
+
+    /** Следующий шаг перехода. Вызывается из [Widgets], пока [transitioning]. */
+    fun step() {
+        t = (t + 1f / STEPS).coerceAtMost(1f)
+    }
+
+    private const val STEPS = 10
+
+    private fun current(): Colors? {
+        val target = to ?: return null
+        val start = from ?: return target
+        if (t >= 1f) return target
+        val e = t * t * (3 - 2 * t)
+        return Colors(
+            ColorUtils.blendARGB(start.base, target.base, e),
+            target.blobs.indices.map { ColorUtils.blendARGB(start.blobs[it], target.blobs[it], e) },
+        )
+    }
+
     fun frames(context: Context, cover: Bitmap?, widthDp: Int, heightDp: Int, radiusDp: Float): List<Bitmap> {
         // Пятна размытые, поэтому кадры рисуются в пониженном разрешении: так легче для лаунчера
         val d = context.resources.displayMetrics.density * 0.45f
         val w = (widthDp * d).toInt().coerceAtLeast(8)
         val h = (heightDp * d).toInt().coerceAtLeast(8)
-        val key = "${cover?.let { System.identityHashCode(it) xor it.generationId }}:$w:$h"
+        val ck = cover?.let { System.identityHashCode(it) xor it.generationId } ?: 0
+        if (ck != coverKey || to == null) {
+            val next = palette(cover)
+            from = current()
+            to = next
+            t = if (from == null) 1f else 0f
+            coverKey = ck
+        }
+        val key = "$ck:$w:$h:$t"
         if (key == cacheKey) return cache
 
-        val colors = palette(cover)
+        val colors = current()!!
         val r = radiusDp * d
         val path = Path().apply { addRoundRect(RectF(0f, 0f, w.toFloat(), h.toFloat()), r, r, Path.Direction.CW) }
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -81,6 +115,7 @@ object Wave {
         ).map { it.rgb }.distinct()
         val blobs = (swatches.ifEmpty { listOf(0xFF7B4DFF.toInt(), 0xFFFF4F9A.toInt(), 0xFFFFA24C.toInt(), 0xFF3FB8FF.toInt()) })
             .take(4).map { boost(it) }
+            .let { l -> List(4) { l[it % l.size] } }
         val base = ColorUtils.blendARGB(p?.getDarkMutedColor(0xFF140F24.toInt()) ?: 0xFF140F24.toInt(), Color.BLACK, 0.45f)
         return Colors(base, blobs)
     }

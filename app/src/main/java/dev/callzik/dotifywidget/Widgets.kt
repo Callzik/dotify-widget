@@ -68,7 +68,18 @@ object Widgets {
                 ids.forEach { manager.updateAppWidget(it, build(context, layout, cls, sizeOf(manager, it, layout))) }
             }
         }
+        if (!progressOnly && Wave.transitioning && !transitionScheduled) {
+            transitionScheduled = true
+            handler.postDelayed({
+                transitionScheduled = false
+                Wave.step()
+                updateAll(context.applicationContext)
+            }, 160)
+        }
     }
+
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var transitionScheduled = false
 
     fun control(context: Context, keyCode: Int) {
         val c = NowPlaying.controller
