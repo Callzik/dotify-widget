@@ -52,7 +52,8 @@ class MainActivity : Activity() {
         }
 
         col.addView(text("Dotify Widget", 26f, Color.WHITE, bold = true))
-        col.addView(text("Виджет «сейчас играет» для главного экрана", 14f, muted).apply { setPadding(0, dp(4), 0, dp(20)) })
+        val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull() ?: "?"
+        col.addView(text("Виджет «сейчас играет» для главного экрана · v$version", 14f, muted).apply { setPadding(0, dp(4), 0, dp(20)) })
 
         // Доступ
         status = text("", 14f, Color.WHITE)

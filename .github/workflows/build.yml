@@ -26,20 +26,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
-          cp app/build/outputs/apk/release/app-release.apk dotify-widget.apk
+          echo "VERSION=1.${{ github.run_number }}" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/release/app-release.apk "dotify-widget-v1.${{ github.run_number }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dotify-widget
-          path: dotify-widget.apk
+          name: dotify-widget-v${{ env.VERSION }}
+          path: dotify-widget-v*.apk
 
       - name: Publish release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Dotify Widget (последняя сборка)
-          body: Сборка ${{ github.run_number }} из ${{ github.sha }}. Скачай dotify-widget.apk и установи на телефон.
+          tag_name: v${{ env.VERSION }}
+          name: Dotify Widget v${{ env.VERSION }}
+          body: Версия ${{ env.VERSION }} из ${{ github.sha }}. Скачай dotify-widget-v${{ env.VERSION }}.apk и установи поверх старой.
           prerelease: false
           make_latest: true
-          files: dotify-widget.apk
+          files: dotify-widget-v${{ env.VERSION }}.apk
