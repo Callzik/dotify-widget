@@ -60,14 +60,16 @@ object ThemeColors {
 
     fun of(theme: WidgetTheme, cover: Bitmap?): WidgetColors {
         val p = palette(cover)
-        val vibrant = p?.getVibrantColor(p.getLightVibrantColor(p.getDominantColor(DEFAULT_ACCENT)))
-            ?: DEFAULT_ACCENT
+        val mono = p != null && CoverTone.colorfulness(p) < CoverTone.MONO
+        val vibrant = if (mono) CoverTone.mono(p!!.getDominantColor(Color.GRAY), 0.86f)
+        else p?.getVibrantColor(p.getLightVibrantColor(p.getDominantColor(DEFAULT_ACCENT))) ?: DEFAULT_ACCENT
         val accentOnDark = lift(vibrant)
         val white = Color.WHITE
         val whiteMuted = 0xB3FFFFFF.toInt()
         return when (theme) {
             WidgetTheme.COVER -> {
-                val base = p?.getDarkMutedColor(p.getDarkVibrantColor(p.getDominantColor(DEFAULT_BG))) ?: DEFAULT_BG
+                val base = if (mono) CoverTone.mono(p!!.getDominantColor(Color.GRAY), 0.1f)
+                else p?.getDarkMutedColor(p.getDarkVibrantColor(p.getDominantColor(DEFAULT_BG))) ?: DEFAULT_BG
                 WidgetColors(darken(base), accentOnDark, onColor(accentOnDark), white, whiteMuted, 0x33FFFFFF, true)
             }
             WidgetTheme.GLASS ->

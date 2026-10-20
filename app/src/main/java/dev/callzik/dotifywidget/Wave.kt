@@ -126,17 +126,24 @@ object Wave {
             p?.vibrantSwatch, p?.lightVibrantSwatch, p?.mutedSwatch, p?.darkVibrantSwatch, p?.lightMutedSwatch, p?.dominantSwatch,
         ).map { it.rgb }.distinct()
         val blobs = (swatches.ifEmpty { listOf(0xFF7B4DFF.toInt(), 0xFFFF4F9A.toInt(), 0xFFFFA24C.toInt(), 0xFF3FB8FF.toInt()) })
-            .take(4).map { boost(it) }
+            .take(4)
             .let { l -> List(4) { l[it % l.size] } }
+        val c = if (p == null) 1f else CoverTone.colorfulness(p)
+        if (c < CoverTone.MONO) {
+            // Чёрно-белая обложка: графитовые пятна разной яркости с родным слабым оттенком
+            val shades = floatArrayOf(0.56f, 0.36f, 0.72f, 0.26f)
+            return Colors(CoverTone.mono(blobs[0], 0.07f), blobs.mapIndexed { i, b -> CoverTone.mono(b, shades[i]) })
+        }
+        val k = CoverTone.boostFactor(c)
         val base = ColorUtils.blendARGB(p?.getDarkMutedColor(0xFF140F24.toInt()) ?: 0xFF140F24.toInt(), Color.BLACK, 0.45f)
-        return Colors(base, blobs)
+        return Colors(base, blobs.map { boost(it, k) })
     }
 
     /** Насыщенность повыше, как у «Моей волны». */
-    private fun boost(c: Int): Int {
+    private fun boost(c: Int, k: Float): Int {
         val hsl = FloatArray(3)
         ColorUtils.colorToHSL(c, hsl)
-        hsl[1] = (hsl[1] * 1.35f).coerceIn(0.45f, 0.95f)
+        hsl[1] = (hsl[1] * k).coerceAtMost(0.95f)
         hsl[2] = hsl[2].coerceIn(0.42f, 0.62f)
         return ColorUtils.HSLToColor(hsl)
     }
