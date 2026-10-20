@@ -161,8 +161,17 @@ object Widgets {
             v.setViewVisibility(R.id.glass, android.view.View.GONE)
         }
 
-        if (cover != null) v.setImageViewBitmap(R.id.cover, rounded(cover, context))
-        else v.setImageViewResource(R.id.cover, R.drawable.cover_placeholder)
+        // Нет обложки: блок убирается целиком, текст и кнопки занимают всю ширину
+        val column = if (layout == R.layout.widget_full) R.id.column else R.id.info
+        if (cover != null) {
+            v.setViewVisibility(R.id.cover, android.view.View.VISIBLE)
+            v.setImageViewBitmap(R.id.cover, rounded(cover, context))
+        } else {
+            v.setViewVisibility(R.id.cover, android.view.View.GONE)
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            v.setViewLayoutMargin(column, RemoteViews.MARGIN_START, if (cover != null) (if (layout == R.layout.widget_full) 14f else 12f) else 4f, android.util.TypedValue.COMPLEX_UNIT_DIP)
+        }
 
         v.setTextViewText(R.id.title, if (hasTrack) NowPlaying.title else "Ничего не играет")
         v.setTextViewText(R.id.artist, if (hasTrack) NowPlaying.artist.orEmpty() else if (MediaListener.hasAccess(context)) "Включи трек в Dotify" else "Нажми, чтобы настроить")
