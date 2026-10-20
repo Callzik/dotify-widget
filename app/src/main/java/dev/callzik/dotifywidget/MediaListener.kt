@@ -42,9 +42,22 @@ class MediaListener : NotificationListenerService() {
         }
     }
 
+    private val beat = object : Runnable {
+        override fun run() {
+            if (!NowPlaying.isPlaying || !Beat.enabled(this@MediaListener) || !Beat.start()) {
+                Beat.stop()
+                Widgets.pulse(this@MediaListener, null)
+                return
+            }
+            Widgets.pulse(this@MediaListener, Beat.level())
+            handler.postDelayed(this, 330)
+        }
+    }
+
     private fun component() = ComponentName(this, MediaListener::class.java)
 
     override fun onListenerConnected() {
+        instance = this
         msm = getSystemService(MediaSessionManager::class.java).also {
             it.addOnActiveSessionsChangedListener(sessionsListener, component())
             attach(NowPlaying.pick(it.getActiveSessions(component())))
@@ -52,6 +65,9 @@ class MediaListener : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
+        instance = null
+        handler.removeCallbacks(beat)
+        Beat.stop()
         msm?.removeOnActiveSessionsChangedListener(sessionsListener)
         watched?.unregisterCallback(callback)
         watched = null
@@ -72,9 +88,17 @@ class MediaListener : NotificationListenerService() {
     private fun scheduleTick() {
         handler.removeCallbacks(tick)
         if (NowPlaying.isPlaying) handler.postDelayed(tick, 1000)
+        refreshBeat()
+    }
+
+    fun refreshBeat() {
+        handler.removeCallbacks(beat)
+        handler.post(beat)
     }
 
     companion object {
+        var instance: MediaListener? = null
+
         fun hasAccess(context: Context): Boolean {
             val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: return false
             val me = ComponentName(context, MediaListener::class.java).flattenToString()

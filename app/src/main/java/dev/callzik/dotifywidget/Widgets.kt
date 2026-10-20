@@ -78,6 +78,23 @@ object Widgets {
         }
     }
 
+    private var lastPulse = -1
+
+    /** Яркость волны под громкость; null возвращает обычный вид. Лёгкое частичное обновление. */
+    fun pulse(context: Context, level: Float?) {
+        val alpha = if (level == null) 255 else (150 + 105 * level).toInt()
+        if (kotlin.math.abs(alpha - lastPulse) < 8) return
+        lastPulse = alpha
+        val manager = AppWidgetManager.getInstance(context)
+        for ((cls, layout) in providers) {
+            val ids = manager.getAppWidgetIds(ComponentName(context, cls))
+            if (ids.isEmpty()) continue
+            val v = RemoteViews(context.packageName, layout)
+            Wave.ids.forEach { v.setInt(it, "setImageAlpha", alpha) }
+            ids.forEach { manager.partiallyUpdateAppWidget(it, v) }
+        }
+    }
+
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var transitionScheduled = false
 

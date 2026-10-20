@@ -26,6 +26,7 @@ class MainActivity : Activity() {
 
     private lateinit var status: TextView
     private lateinit var grant: Button
+    private lateinit var beatSwitch: android.widget.Switch
     private lateinit var previewFull: FrameLayout
     private lateinit var previewCompact: FrameLayout
 
@@ -33,6 +34,10 @@ class MainActivity : Activity() {
     private val card = 0xFF1B1826.toInt()
     private val accent = 0xFFB794FF.toInt()
     private val muted = 0xFFA39FB8.toInt()
+
+    private companion object {
+        const val REQ_AUDIO = 7
+    }
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
 
@@ -109,7 +114,27 @@ class MainActivity : Activity() {
                 renderPreview()
             }
         }
-        col.addView(section(group, wave))
+        beatSwitch = android.widget.Switch(this).apply {
+            text = "Фон пульсирует под музыку\n"
+            append(android.text.SpannableString("Нужен доступ к микрофону: приложение читает только громкость, звук не записывается").apply {
+                setSpan(android.text.style.ForegroundColorSpan(muted), 0, length, 0)
+                setSpan(android.text.style.RelativeSizeSpan(0.82f), 0, length, 0)
+            })
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            isChecked = Beat.enabled(this@MainActivity)
+            thumbTintList = ColorStateList.valueOf(accent)
+            setPadding(dp(8), dp(10), 0, dp(6))
+            setOnCheckedChangeListener { _, on ->
+                if (on && !Beat.hasPermission(this@MainActivity)) {
+                    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQ_AUDIO)
+                } else {
+                    Beat.setEnabled(this@MainActivity, on)
+                    MediaListener.instance?.refreshBeat()
+                }
+            }
+        }
+        col.addView(section(group, wave, beatSwitch))
 
         // Добавление на экран
         col.addView(header("Добавить на главный экран"))
@@ -123,6 +148,15 @@ class MainActivity : Activity() {
             setBackgroundColor(ink)
             addView(col)
         })
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode != REQ_AUDIO) return
+        val ok = grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED
+        Beat.setEnabled(this, ok)
+        beatSwitch.isChecked = ok
+        if (!ok) Toast.makeText(this, "Без доступа к микрофону фон не сможет реагировать на музыку", Toast.LENGTH_LONG).show()
+        MediaListener.instance?.refreshBeat()
     }
 
     override fun onResume() {
