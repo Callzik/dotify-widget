@@ -116,8 +116,8 @@ class MainActivity : Activity() {
             }
         }
         beatSwitch = android.widget.Switch(this).apply {
-            text = "Фон пульсирует под музыку\n"
-            append(android.text.SpannableString("Нужен доступ к микрофону: приложение читает только громкость, звук не записывается").apply {
+            text = "Фон течёт в темпе музыки\n"
+            append(android.text.SpannableString("Громче — быстрее. Нужен доступ к микрофону: читается только громкость, звук не записывается").apply {
                 setSpan(android.text.style.ForegroundColorSpan(muted), 0, length, 0)
                 setSpan(android.text.style.RelativeSizeSpan(0.82f), 0, length, 0)
             })

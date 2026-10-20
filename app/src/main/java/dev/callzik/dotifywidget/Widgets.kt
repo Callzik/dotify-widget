@@ -74,23 +74,28 @@ object Widgets {
                 transitionScheduled = false
                 Wave.step()
                 updateAll(context.applicationContext)
-            }, 160)
+            }, 250)
         }
     }
 
-    private var lastPulse = -1
+    private var flowInterval = Wave.CALM_MS
+    private var energy = 0f
 
-    /** Яркость волны под громкость; null возвращает обычный вид. Лёгкое частичное обновление. */
-    fun pulse(context: Context, level: Float?) {
-        val alpha = if (level == null) 255 else (150 + 105 * level).toInt()
-        if (kotlin.math.abs(alpha - lastPulse) < 8) return
-        lastPulse = alpha
+    /**
+     * Музыка не «бьёт» фоном, а плавно меняет скорость течения: громкость сглаживается
+     * за несколько секунд, громче — пятна текут быстрее. null возвращает спокойный темп.
+     */
+    fun flow(context: Context, level: Float?) {
+        energy = if (level == null) 0f else energy * 0.9f + level * 0.1f
+        val interval = (Wave.CALM_MS - (Wave.CALM_MS - Wave.LOUD_MS) * energy).toInt() / 50 * 50
+        if (interval == flowInterval) return
+        flowInterval = interval
         val manager = AppWidgetManager.getInstance(context)
         for ((cls, layout) in providers) {
             val ids = manager.getAppWidgetIds(ComponentName(context, cls))
             if (ids.isEmpty()) continue
             val v = RemoteViews(context.packageName, layout)
-            Wave.ids.forEach { v.setInt(it, "setImageAlpha", alpha) }
+            v.setInt(R.id.wave, "setFlipInterval", interval)
             ids.forEach { manager.partiallyUpdateAppWidget(it, v) }
         }
     }
@@ -147,7 +152,7 @@ object Widgets {
             frames.forEachIndexed { i, b -> v.setImageViewBitmap(Wave.ids[i], b) }
             v.setViewVisibility(R.id.wave, android.view.View.VISIBLE)
             // Пока музыка играет, фон течёт; на паузе почти замирает
-            v.setInt(R.id.wave, "setFlipInterval", if (NowPlaying.isPlaying) 1500 else 60_000)
+            v.setInt(R.id.wave, "setFlipInterval", if (NowPlaying.isPlaying) flowInterval else 60_000)
             // Сплошные темы становятся полупрозрачными, чтобы волна была видна
             if (!c.liquid && Color.alpha(c.bg) > 0) v.setInt(R.id.bg, "setImageAlpha", 0x73)
         } else {

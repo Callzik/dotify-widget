@@ -16,13 +16,21 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Переливающийся фон в духе «Моей волны»: большие мягкие пятна цветов обложки,
- * которые плывут по кругу. Виджет не может рисовать анимацию сам, поэтому заранее
- * рисуются [FRAMES] кадров, а ViewFlipper плавно перетекает между ними.
+ * Переливающийся фон в духе «Моей волны»: большие мягкие пятна цветов обложки
+ * медленно дрейфуют и перетекают друг в друга. Виджет не может рисовать анимацию сам,
+ * поэтому заранее рисуются [FRAMES] близких кадров замкнутого цикла, а ViewFlipper
+ * непрерывно перетекает между ними: кроссфейд длиной во весь интервал, без пауз.
  */
 object Wave {
-    const val FRAMES = 6
-    val ids = intArrayOf(R.id.wave0, R.id.wave1, R.id.wave2, R.id.wave3, R.id.wave4, R.id.wave5)
+    const val FRAMES = 12
+    val ids = intArrayOf(
+        R.id.wave0, R.id.wave1, R.id.wave2, R.id.wave3, R.id.wave4, R.id.wave5,
+        R.id.wave6, R.id.wave7, R.id.wave8, R.id.wave9, R.id.wave10, R.id.wave11,
+    )
+
+    /** Интервал смены кадра: совпадает с длиной кроссфейда, чтобы движение не останавливалось. */
+    const val CALM_MS = 1300
+    const val LOUD_MS = 1100
 
     private const val PREFS = "settings"
     private const val KEY = "wave"
@@ -48,7 +56,7 @@ object Wave {
         t = (t + 1f / STEPS).coerceAtMost(1f)
     }
 
-    private const val STEPS = 10
+    private const val STEPS = 6
 
     private fun current(): Colors? {
         val target = to ?: return null
@@ -63,7 +71,7 @@ object Wave {
 
     fun frames(context: Context, cover: Bitmap?, widthDp: Int, heightDp: Int, radiusDp: Float): List<Bitmap> {
         // Пятна размытые, поэтому кадры рисуются в пониженном разрешении: так легче для лаунчера
-        val d = context.resources.displayMetrics.density * 0.45f
+        val d = context.resources.displayMetrics.density * 0.3f
         val w = (widthDp * d).toInt().coerceAtLeast(8)
         val h = (heightDp * d).toInt().coerceAtLeast(8)
         val ck = cover?.let { System.identityHashCode(it) xor it.generationId } ?: 0
@@ -89,12 +97,13 @@ object Wave {
                 c.clipPath(path)
                 c.drawColor(colors.base)
                 colors.blobs.forEachIndexed { i, color ->
-                    // У каждого пятна своя орбита и скорость, кратная циклу: анимация замыкается без рывка
-                    val speed = if (i % 2 == 0) 1 else -1
-                    val a = t * speed + i * 1.7f
-                    val cx = w * (0.5f + 0.38f * cos(a + i))
-                    val cy = h * (0.5f + 0.45f * sin(a * 1f + i * 2.3f))
-                    val rad = maxOf(w, h) * (0.55f + 0.12f * sin(t + i))
+                    // Фигуры Лиссажу с целыми частотами: каждое пятно плывёт по своей петле,
+                    // цикл замыкается без рывка, соседние кадры почти совпадают
+                    val fx = FX[i]
+                    val fy = FY[i]
+                    val cx = w * (0.5f + 0.34f * cos(t * fx + i * 1.9f))
+                    val cy = h * (0.5f + 0.42f * sin(t * fy + i * 2.7f))
+                    val rad = maxOf(w, h) * (0.62f + 0.1f * sin(t + i * 1.3f))
                     p.shader = RadialGradient(cx, cy, rad,
                         intArrayOf(color, ColorUtils.setAlphaComponent(color, 0x66), Color.TRANSPARENT),
                         floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP)
@@ -105,6 +114,9 @@ object Wave {
         cacheKey = key
         return cache
     }
+
+    private val FX = intArrayOf(1, -1, 2, 1)
+    private val FY = intArrayOf(1, 2, -1, -1)
 
     private class Colors(val base: Int, val blobs: List<Int>)
 

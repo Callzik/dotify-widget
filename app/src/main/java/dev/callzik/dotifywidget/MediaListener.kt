@@ -46,11 +46,11 @@ class MediaListener : NotificationListenerService() {
         override fun run() {
             if (!NowPlaying.isPlaying || !Beat.enabled(this@MediaListener) || !Beat.start()) {
                 Beat.stop()
-                Widgets.pulse(this@MediaListener, null)
+                Widgets.flow(this@MediaListener, null)
                 return
             }
-            Widgets.pulse(this@MediaListener, Beat.level())
-            handler.postDelayed(this, 330)
+            Widgets.flow(this@MediaListener, Beat.level())
+            handler.postDelayed(this, 500)
         }
     }
 
