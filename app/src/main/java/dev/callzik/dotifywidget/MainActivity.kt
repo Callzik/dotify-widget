@@ -96,7 +96,20 @@ class MainActivity : Activity() {
             Widgets.updateAll(this)
             renderPreview()
         }
-        col.addView(section(group))
+        val wave = android.widget.Switch(this).apply {
+            text = "Переливающийся фон, как в «Моей волне»"
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            isChecked = Wave.enabled(this@MainActivity)
+            thumbTintList = ColorStateList.valueOf(accent)
+            setPadding(dp(8), dp(14), 0, dp(6))
+            setOnCheckedChangeListener { _, on ->
+                Wave.setEnabled(this@MainActivity, on)
+                Widgets.updateAll(this@MainActivity)
+                renderPreview()
+            }
+        }
+        col.addView(section(group, wave))
 
         // Добавление на экран
         col.addView(header("Добавить на главный экран"))

@@ -114,6 +114,17 @@ object Widgets {
         v.setInt(R.id.bg, "setColorFilter", c.bg or 0xFF000000.toInt())
         v.setInt(R.id.bg, "setImageAlpha", Color.alpha(c.bg))
         v.setViewVisibility(R.id.overlay, if (c.overlay) android.view.View.VISIBLE else android.view.View.GONE)
+        if (Wave.enabled(context)) {
+            val frames = Wave.frames(context, cover, size.first, size.second, 26f)
+            frames.forEachIndexed { i, b -> v.setImageViewBitmap(Wave.ids[i], b) }
+            v.setViewVisibility(R.id.wave, android.view.View.VISIBLE)
+            // Пока музыка играет, фон течёт; на паузе почти замирает
+            v.setInt(R.id.wave, "setFlipInterval", if (NowPlaying.isPlaying) 1500 else 60_000)
+            // Сплошные темы становятся полупрозрачными, чтобы волна была видна
+            if (!c.liquid && Color.alpha(c.bg) > 0) v.setInt(R.id.bg, "setImageAlpha", 0x73)
+        } else {
+            v.setViewVisibility(R.id.wave, android.view.View.GONE)
+        }
         if (c.liquid) {
             v.setViewVisibility(R.id.glass, android.view.View.VISIBLE)
             v.setImageViewBitmap(R.id.glass, Glass.panel(context, size.first, size.second, 26f, c.tint))
