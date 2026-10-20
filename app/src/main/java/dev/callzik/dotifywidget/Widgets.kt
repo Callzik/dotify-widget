@@ -24,8 +24,11 @@ open class BaseWidget(private val layout: Int) : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         if (NowPlaying.controller == null) NowPlaying.refresh(context)
-        val views = Widgets.build(context, layout, javaClass)
-        ids.forEach { manager.updateAppWidget(it, views) }
+        ids.forEach { manager.updateAppWidget(it, Widgets.build(context, layout, javaClass, Widgets.sizeOf(manager, it, layout))) }
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) {
+        manager.updateAppWidget(id, Widgets.build(context, layout, javaClass, Widgets.sizeOf(manager, id, layout)))
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -62,8 +65,7 @@ object Widgets {
                 bindProgress(views)
                 ids.forEach { manager.partiallyUpdateAppWidget(it, views) }
             } else {
-                val views = build(context, layout, cls)
-                ids.forEach { manager.updateAppWidget(it, views) }
+                ids.forEach { manager.updateAppWidget(it, build(context, layout, cls, sizeOf(manager, it, layout))) }
             }
         }
     }
@@ -86,10 +88,21 @@ object Widgets {
         }
     }
 
+    /** Размер виджета в dp (портретный), нужен, чтобы нарисовать стекло без искажений. */
+    fun sizeOf(manager: AppWidgetManager, id: Int, layout: Int): Pair<Int, Int> {
+        val o = manager.getAppWidgetOptions(id)
+        val w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        return if (w > 0 && h > 0) w to h else defaultSize(layout)
+    }
+
+    fun defaultSize(layout: Int) = if (layout == R.layout.widget_full) 320 to 150 else 320 to 70
+
     fun build(
         context: Context,
         layout: Int,
         provider: Class<*>,
+        size: Pair<Int, Int> = defaultSize(layout),
         theme: WidgetTheme = WidgetTheme.current(context),
     ): RemoteViews {
         val v = RemoteViews(context.packageName, layout)
@@ -101,6 +114,13 @@ object Widgets {
         v.setInt(R.id.bg, "setColorFilter", c.bg or 0xFF000000.toInt())
         v.setInt(R.id.bg, "setImageAlpha", Color.alpha(c.bg))
         v.setViewVisibility(R.id.overlay, if (c.overlay) android.view.View.VISIBLE else android.view.View.GONE)
+        if (c.liquid) {
+            v.setViewVisibility(R.id.glass, android.view.View.VISIBLE)
+            v.setImageViewBitmap(R.id.glass, Glass.panel(context, size.first, size.second, 26f, c.tint))
+            v.setImageViewBitmap(R.id.play_bg, Glass.circle(context, if (layout == R.layout.widget_full) 46 else 42, c.tint))
+        } else {
+            v.setViewVisibility(R.id.glass, android.view.View.GONE)
+        }
 
         if (cover != null) v.setImageViewBitmap(R.id.cover, rounded(cover, context))
         else v.setImageViewResource(R.id.cover, R.drawable.cover_placeholder)
@@ -117,7 +137,7 @@ object Widgets {
             v.setInt(R.id.prev, "setColorFilter", c.fg)
         }
         v.setInt(R.id.next, "setColorFilter", c.fg)
-        v.setInt(R.id.play_bg, "setColorFilter", c.accent)
+        if (!c.liquid) v.setInt(R.id.play_bg, "setColorFilter", c.accent)
         v.setInt(R.id.play, "setColorFilter", c.onAccent)
         v.setImageViewResource(R.id.play, if (NowPlaying.isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
 

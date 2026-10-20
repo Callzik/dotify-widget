@@ -18,6 +18,13 @@
         android:scaleType="fitXY"
         android:src="@drawable/widget_overlay" />
 
+    <ImageView
+        android:id="@+id/glass"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

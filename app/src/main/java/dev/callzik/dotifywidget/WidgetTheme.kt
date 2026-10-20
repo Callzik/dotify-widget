@@ -8,6 +8,7 @@ import androidx.palette.graphics.Palette
 
 /** Оформления виджета. Выбор хранится в настройках приложения. */
 enum class WidgetTheme(val label: String, val hint: String) {
+    LIQUID("Liquid Glass", "Стекло как в iOS 26: блик, светящаяся кромка, стеклянные кнопки"),
     COVER("Под обложку", "Фон и акцент берутся из цветов обложки"),
     GLASS("Тёмное стекло", "Полупрозрачный тёмный фон, акцент из обложки"),
     LIGHT("Светлая", "Светлый фон, тёмный текст"),
@@ -38,6 +39,9 @@ data class WidgetColors(
     val muted: Int,
     val track: Int,
     val overlay: Boolean,
+    /** Liquid Glass: фон и кнопка рисуются стеклом через [Glass], а не заливкой. */
+    val liquid: Boolean = false,
+    val tint: Int = Color.TRANSPARENT,
 )
 
 object ThemeColors {
@@ -76,6 +80,8 @@ object ThemeColors {
                 WidgetColors(Color.BLACK, white, Color.BLACK, white, 0x99FFFFFF.toInt(), 0x33FFFFFF, false)
             WidgetTheme.NEON ->
                 WidgetColors(0xFF0E0B1C.toInt(), 0xFFFF3DCB.toInt(), Color.WHITE, white, 0xFF8FF3FF.toInt(), 0x33FF3DCB, true)
+            WidgetTheme.LIQUID ->
+                WidgetColors(Color.TRANSPARENT, white, white, white, 0xD9FFFFFF.toInt(), 0x47FFFFFF, false, liquid = true, tint = vibrant)
             WidgetTheme.CLEAR ->
                 WidgetColors(Color.TRANSPARENT, white, Color.BLACK, white, 0xD9FFFFFF.toInt(), 0x40FFFFFF, false)
         }
