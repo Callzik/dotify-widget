@@ -65,7 +65,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 intArrayOf(0xFF3A2C7A.toInt(), 0xFFB0407A.toInt(), 0xFFE8925A.toInt())).apply { cornerRadius = dp(26).toFloat() }
-            addView(previewFull, LinearLayout.LayoutParams(-1, dp(140)))
+            addView(previewFull, LinearLayout.LayoutParams(-1, dp(184)))
             addView(previewCompact, LinearLayout.LayoutParams(-1, dp(70)).apply { topMargin = dp(12) })
         }
         col.addView(backdrop)
@@ -139,7 +139,7 @@ class MainActivity : Activity() {
         previewFull.removeAllViews()
         previewCompact.removeAllViews()
         runCatching {
-            previewFull.addView(Widgets.build(this, R.layout.widget_full, NowPlayingWidget::class.java, previewSize(140)).apply(this, previewFull))
+            previewFull.addView(Widgets.build(this, R.layout.widget_full, NowPlayingWidget::class.java, previewSize(184)).apply(this, previewFull))
             previewCompact.addView(Widgets.build(this, R.layout.widget_compact, CompactWidget::class.java, previewSize(70)).apply(this, previewCompact))
         }
     }
