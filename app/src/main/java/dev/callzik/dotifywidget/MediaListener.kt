@@ -81,8 +81,32 @@ class MediaListener : NotificationListenerService() {
             c?.registerCallback(callback, handler)
         }
         NowPlaying.controller = c
+        runCatching { activeNotifications?.forEach { grabCover(it) } }
         Widgets.updateAll(this)
         scheduleTick()
+    }
+
+    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification) {
+        if (grabCover(sbn) && NowPlaying.cover != null) Widgets.updateAll(this)
+    }
+
+    /** Запасной источник обложки: большая картинка медиауведомления плеера. */
+    private fun grabCover(sbn: android.service.notification.StatusBarNotification): Boolean {
+        if (sbn.packageName != NowPlaying.controller?.packageName) return false
+        val n = sbn.notification
+        val bmp = runCatching {
+            n.getLargeIcon()?.loadDrawable(this)?.let { d ->
+                (d as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                    ?: android.graphics.Bitmap.createBitmap(d.intrinsicWidth.coerceIn(1, 512), d.intrinsicHeight.coerceIn(1, 512), android.graphics.Bitmap.Config.ARGB_8888).also {
+                        d.setBounds(0, 0, it.width, it.height)
+                        d.draw(android.graphics.Canvas(it))
+                    }
+            } ?: n.extras.getParcelable<android.graphics.Bitmap>(android.app.Notification.EXTRA_LARGE_ICON)
+        }.getOrNull() ?: return false
+        NowPlaying.notifCover = bmp
+        NowPlaying.notifTitle = n.extras.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString()
+        NowPlaying.notifPackage = sbn.packageName
+        return true
     }
 
     private fun scheduleTick() {

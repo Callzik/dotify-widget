@@ -139,6 +139,7 @@ object Widgets {
         theme: WidgetTheme = WidgetTheme.current(context),
     ): RemoteViews {
         val v = RemoteViews(context.packageName, layout)
+        NowPlaying.loadCoverUri(context)
         val cover = NowPlaying.cover
         val c = ThemeColors.of(theme, cover)
         val hasTrack = NowPlaying.controller != null && NowPlaying.title != null
