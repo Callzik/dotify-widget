@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dotify Widget</string>
+    <string name="widget_full">Сейчас играет</string>
+    <string name="widget_compact">Сейчас играет · мини</string>
+    <string name="widget_desc">Обложка, трек и управление Dotify</string>
+</resources>

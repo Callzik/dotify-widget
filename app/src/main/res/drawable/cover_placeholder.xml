@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <corners android:radius="16dp" />
+            <gradient android:angle="315" android:endColor="#FF2A1F4D" android:startColor="#FF8A5CFF" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_note" android:gravity="center" android:width="40dp" android:height="40dp" />
+</layer-list>
