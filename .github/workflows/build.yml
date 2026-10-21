@@ -40,7 +40,7 @@ jobs:
         with:
           tag_name: v${{ env.VERSION }}
           name: Dotify Widget v${{ env.VERSION }}
-          body: Версия ${{ env.VERSION }} из ${{ github.sha }}. Скачай dotify-widget-v${{ env.VERSION }}.apk и установи поверх старой.
+          body_path: RELEASE_NOTES.md
           prerelease: false
           make_latest: true
           files: dotify-widget-v${{ env.VERSION }}.apk
